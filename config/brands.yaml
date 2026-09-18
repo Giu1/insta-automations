@@ -1,0 +1,10 @@
+# Copy to config/brands.yaml and fill IDs from Meta Business Suite.
+# Tokens live in .env (token_env), not in this file.
+
+brands:
+  acme:
+    name: Marketer Milano
+    ig_user_id: "17841431544171129"
+    instagram_app_user_id: "38522968214016994"
+    facebook_page_id: "0"
+    token_env: BRAND_ACME_PAGE_TOKEN
