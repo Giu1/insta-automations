@@ -68,6 +68,25 @@ Do **not** use `"*"` under `comments` — you would reply to every single commen
 
 Delete the whole block, from its `- name:` line down to its last language line. Run the check.
 
+## Links in replies
+
+Replies are plain text, so a link is just typed into the text. Instagram makes it clickable in Direct messages:
+
+```yaml
+      - name: booking
+        keywords: [book, booking, agendar, marcar, reservar, cita, agenda]
+        reply:
+          en: "You can book here: https://your-site.com/book"
+          pt-PT: "Podes marcar aqui: https://your-site.com/book"
+          pt-BR: "Você pode agendar aqui: https://your-site.com/book"
+          es: "Puedes reservar aquí: https://your-site.com/book"
+```
+
+- **Keep the double quotes** around text with a link; the `:` in `https:` breaks the file otherwise.
+- **Messages**: links are fine and clickable.
+- **Comments**: links show as plain text (not clickable) and Instagram may hide repeated link comments as spam. Prefer "link in bio" in comment replies and put the real link in the message reply.
+- No formatting (bold, markdown) exists in Instagram replies; write the URL as-is. Short links look cleaner.
+
 ## Tips for good replies
 
 - Keep it short; comments are public.
