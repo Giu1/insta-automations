@@ -1,74 +1,91 @@
-from datetime import datetime, timedelta, timezone
+"""SQLite storage: what we already handled, welcome messages sent, published posts, refreshed tokens."""
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, create_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+from sqlalchemy import DateTime, Integer, String, Text, create_engine, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from app.settings import get_settings
+
+
+def now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class Base(DeclarativeBase):
     pass
 
 
-class ScheduledPost(Base):
-    __tablename__ = "scheduled_posts"
+class SeenEvent(Base):
+    __tablename__ = "seen_events"
+    key: Mapped[str] = mapped_column(String(191), primary_key=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
+
+class WelcomeSent(Base):
+    __tablename__ = "welcome_sent"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    brand_slug: Mapped[str] = mapped_column(String(64), index=True)
-    caption: Mapped[str] = mapped_column(Text, default="")
-    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    video_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    media_type: Mapped[str] = mapped_column(String(32), default="IMAGE")  # IMAGE, REELS, STORIES, VIDEO
-    publish_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
-    status: Mapped[str] = mapped_column(String(32), default="queued")  # queued, publishing, published, failed
-    graph_container_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    graph_media_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    brand: Mapped[str] = mapped_column(String(64), index=True)
+    sender: Mapped[str] = mapped_column(String(64), index=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-class ProcessedEvent(Base):
-    __tablename__ = "processed_events"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    event_key: Mapped[str] = mapped_column(String(191), unique=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-
-
-class DmDefaultSent(Base):
-    __tablename__ = "dm_default_sent"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    brand_slug: Mapped[str] = mapped_column(String(64), index=True)
-    sender_id: Mapped[str] = mapped_column(String(64), index=True)
-    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+class PublishedPost(Base):
+    __tablename__ = "published_posts"
+    post_id: Mapped[str] = mapped_column(String(191), primary_key=True)
+    brand: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16))  # published | failed
+    media_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-def is_default_sent_recent(session, brand_slug: str, sender_id: str, hours: int = 24) -> bool:
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-    row = (
-        session.query(DmDefaultSent)
-        .filter(
-            DmDefaultSent.brand_slug == brand_slug,
-            DmDefaultSent.sender_id == sender_id,
-            DmDefaultSent.sent_at >= cutoff,
-        )
-        .first()
-    )
-    return row is not None
+class StoredToken(Base):
+    __tablename__ = "tokens"
+    brand: Mapped[str] = mapped_column(String(64), primary_key=True)
+    token: Mapped[str] = mapped_column(Text)
+    refreshed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-engine = create_engine(
-    get_settings().database_url,
-    connect_args={"check_same_thread": False} if get_settings().database_url.startswith("sqlite") else {},
-)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+_url = get_settings().database_url
+engine = create_engine(_url, connect_args={"check_same_thread": False} if _url.startswith("sqlite") else {})
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
 def init_db() -> None:
-    from pathlib import Path
-
-    if get_settings().database_url.startswith("sqlite"):
+    if _url.startswith("sqlite"):
         Path("data").mkdir(exist_ok=True)
     Base.metadata.create_all(engine)
+
+
+# ----- helpers -----
+
+
+def mark_seen(session: Session, key: str) -> bool:
+    """Returns True the first time a key is seen, False if already handled."""
+    if session.get(SeenEvent, key):
+        return False
+    session.add(SeenEvent(key=key, at=now()))
+    session.commit()
+    return True
+
+
+def welcome_sent_recently(session: Session, brand: str, sender: str, hours: int = 24) -> bool:
+    cutoff = now() - timedelta(hours=hours)
+    stmt = select(WelcomeSent).where(
+        WelcomeSent.brand == brand, WelcomeSent.sender == sender, WelcomeSent.at >= cutoff
+    )
+    return session.execute(stmt).first() is not None
+
+
+def record_welcome(session: Session, brand: str, sender: str) -> None:
+    session.add(WelcomeSent(brand=brand, sender=sender, at=now()))
+    session.commit()
+
+
+def record_post(session: Session, post_id: str, brand: str, status: str, media_id: str | None, error: str | None) -> None:
+    session.merge(PublishedPost(post_id=post_id, brand=brand, status=status, media_id=media_id, error=error, at=now()))
+    session.commit()

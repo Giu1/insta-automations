@@ -1,91 +1,57 @@
 # Insta Automations
 
-Multi-brand Instagram automation using **only the official Meta Graph API**:
+Small, auditable service that uses **only the official Instagram API (Instagram Login)** to:
 
-- Schedule image / Reels / Stories posts
-- Public replies when a comment contains specific words
-- Auto-replies in DMs **only after the person messages first** (Instagram’s 24-hour window)
+- reply publicly to **comments** that contain configured keywords,
+- reply to **Direct messages** from people who message first (24-hour window),
+- **publish scheduled posts**, reels and stories from a content calendar,
 
-No browser bots, no cold DMs, no account-creation scripts.
+in **English, Portuguese (PT / BR) and Spanish**, choosing the language the person wrote in.
 
-## Architecture
+It never sends unsolicited messages, never follows/likes, never scrapes, and never creates accounts.
+
+## For editors (no coding)
+
+Edit the files in `config/` and run the check. Start with **[guides/README.md](guides/README.md)**.
+
+| File | Purpose |
+|---|---|
+| `config/replies.yaml` | keyword rules and replies in 4 languages |
+| `config/posts.yaml` | scheduled posts |
+| `config/brands.yaml` | Instagram accounts managed |
+
+## For the technical person
 
 ```
-Instagram / Messenger  --webhooks-->  FastAPI  --rules.yaml-->  Graph API replies
-                                              |
-                         /api/posts           +-- SQLite queue --> publisher (every 30s)
-                                              |                   Graph: media -> wait -> media_publish
-                         brands.yaml + Page tokens in .env
-```
-
-Each **brand** is one Instagram Professional account linked to a Facebook Page. Incoming webhooks are routed by Instagram user id or Page id.
-
-## Meta app setup (once)
-
-1. Convert each Instagram account to **Professional** and attach it to a **Facebook Page**.
-2. Create a Meta app → add **Instagram** + **Webhooks**.
-3. Permissions to request (App Review for other people’s accounts; your own Pages can use them in Dev mode):
-   - `instagram_business_basic`
-   - `instagram_business_content_publish`
-   - `instagram_manage_comments`
-   - `instagram_manage_messages`
-   - `pages_manage_metadata` / `pages_read_engagement` as required by current docs
-4. Subscribe the Page/Instagram account to webhook fields: `comments`, `messages`.
-5. Generate a **long-lived Page access token** per brand. Put it in `.env` as `BRAND_*_PAGE_TOKEN`.
-6. Callback URL: `https://<your-public-host>/webhooks/meta`  
-   Verify token must match `META_WEBHOOK_VERIFY_TOKEN`.
-
-Local dev: expose the app with ngrok or Cloudflare Tunnel so Meta can POST webhooks.
-
-Official guides:
-
-- [Content publishing](https://developers.facebook.com/docs/instagram-platform/content-publishing)
-- [Instagram webhooks](https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram)
-- [Instagram messaging](https://developers.facebook.com/docs/messenger-platform/instagram)
-
-## Run locally
-
-```powershell
-cd C:\Users\lucas\Pictures\Insta_Automations
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-copy .env.example .env
-# edit .env, config\brands.yaml, config\rules.yaml
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+copy .env.example .env         # fill INSTAGRAM_APP_SECRET, WEBHOOK_VERIFY_TOKEN, BRAND_*_TOKEN
+python -m app.tools check      # validates config + tokens
+python -m app.tools subscribe  # enables comments/messages webhooks
+uvicorn app.main:app --port 8080
 ```
 
-## Schedule a post
+Endpoints: `GET/POST /webhooks/meta` (Meta), `GET /health`, `GET /privacy`, `GET /data-deletion`, `POST /deauthorize`.
 
-Media URLs must be **publicly fetchable by Meta** (not localhost).
+Hosting and Meta setup: [guides/5-hosting.md](guides/5-hosting.md), [guides/6-meta-app-review.md](guides/6-meta-app-review.md).
 
-```powershell
-curl -X POST http://127.0.0.1:8080/api/posts `
-  -H "X-API-Key: change-me" `
-  -H "Content-Type: application/json" `
-  -d '{
-    "brand": "acme",
-    "caption": "Morning brew",
-    "image_url": "https://example.com/photo.jpg",
-    "media_type": "IMAGE",
-    "publish_at": "2026-09-10T08:00:00+00:00"
-  }'
+## Code map (≈600 lines)
+
+```
+app/
+  main.py        FastAPI app, scheduler (publish every minute, refresh tokens daily), legal routes
+  webhooks.py    signature check, comment/message handlers
+  replies.py     keyword matching -> which reply
+  i18n.py        language detection (en / pt-PT / pt-BR / es) and translation fallback
+  publisher.py   publishes due posts from posts.yaml
+  instagram.py   Instagram API client
+  tokens.py      token lookup + daily refresh
+  config.py      loads/validates brands.yaml, replies.yaml, posts.yaml
+  db.py          SQLite: seen events, welcomes sent, published posts, refreshed tokens
+  tools.py       CLI: check, try, posts, whoami, publish-now, subscribe
+docs/            privacy + data-deletion pages (GitHub Pages)
+guides/          plain-language documentation
 ```
 
-The worker publishes due items every 30 seconds (container → `FINISHED` → `media_publish`). Stay under Meta’s daily publish cap per account.
+## Data handling
 
-## Keyword replies
-
-Edit `config/rules.yaml`. **First matching rule wins.**
-
-- **Comments** → public reply on that comment.
-- **DMs** → `me/messages` to the sender IGSID. Echoes and your own account are ignored.
-- `"*"` is the fallback. With `dm_default_once_per_day: true`, that fallback is sent at most once per sender per 24 hours so you do not loop.
-
-You cannot legally/API-wise open a DM with someone who has never messaged you. This app never does that.
-
-## Limits and policy
-
-- Only Professional accounts you control (or that completed Facebook Login for Business).
-- DMs: user-initiated 24-hour messaging window.
-- Do not use this for spam, mass follow, or unsolicited outreach.
+Stored: Instagram account ids, access tokens (env / SQLite), comment and message ids (deduplication), sender ids for 24h welcome throttling, scheduled post results. Nothing else. See `docs/privacy.html`.

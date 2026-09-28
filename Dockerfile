@@ -4,6 +4,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY config ./config
-COPY public ./public
+COPY docs ./docs
+RUN mkdir -p /app/data
 ENV PORT=8080
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

@@ -1,10 +1,18 @@
-# Copy to config/brands.yaml and fill IDs from Meta Business Suite.
-# Tokens live in .env (token_env), not in this file.
+# Instagram accounts managed by this app.  One block per account ("brand").
+#
+#   name              Friendly name (anything).
+#   instagram_id      Get both ids with:  python -m app.tools whoami
+#   instagram_app_user_id
+#   token_env         Name of the line in .env that holds this account's access token.
+#   default_language  Used when we cannot tell the language of a comment/message.
+#                     One of: en, pt-PT, pt-BR, es
+#   timezone          Used for publish_at in posts.yaml  (Europe/Lisbon, America/Sao_Paulo, America/Mexico_City, ...)
 
 brands:
-  acme:
+  marketermilano:
     name: Marketer Milano
-    ig_user_id: "17841431544171129"
+    instagram_id: "17841431544171129"
     instagram_app_user_id: "38522968214016994"
-    facebook_page_id: "0"
-    token_env: BRAND_ACME_PAGE_TOKEN
+    token_env: BRAND_MARKETERMILANO_TOKEN
+    default_language: pt-PT
+    timezone: Europe/Lisbon

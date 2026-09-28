@@ -1,0 +1,21 @@
+# Content calendar.  See guides/2-posts.md.
+#
+# Each post:
+#   id          Unique name, never reuse it (this is how we make sure a post is not published twice).
+#   brand       A brand from brands.yaml.
+#   publish_at  "YYYY-MM-DD HH:MM" in the brand's timezone. The post goes out within 1 minute of this time.
+#   type        image | reel | story
+#   media_url   PUBLIC https link to the image (.jpg/.png) or video (.mp4). Instagram downloads it.
+#   caption     Text of the post (not used for stories). Use | for several lines.
+#
+# Check what is scheduled / already published with:  python -m app.tools posts
+
+posts:
+  - id: 2026-10-01-example
+    brand: marketermilano
+    publish_at: "2026-10-01 09:00"
+    type: image
+    media_url: https://example.com/replace-me.jpg
+    caption: |
+      Example post. Replace media_url and this caption, or delete this block.
+      #marketing #instagram

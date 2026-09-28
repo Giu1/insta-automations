@@ -1,3 +1,5 @@
+"""Environment settings. Values come from .env (local) or the host's secret env vars."""
+
 from functools import lru_cache
 from pathlib import Path
 
@@ -11,20 +13,20 @@ load_dotenv(ROOT / ".env")
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore")
 
-    meta_app_id: str = ""
-    meta_app_secret: str = ""
+    # From Meta App Dashboard -> Instagram -> API setup with Instagram login -> "Instagram app secret"
     instagram_app_secret: str = ""
-    webhook_skip_signature: bool = False
-    meta_webhook_verify_token: str = "change-me"
-    graph_api_version: str = "v21.0"
+    # Optional: Meta App settings -> Basic -> App secret (accepted as a fallback for signatures)
+    meta_app_secret: str = ""
+    # Any string you choose; must match the "Verify token" typed in the Meta webhook settings
+    webhook_verify_token: str = "change-me"
+
     graph_api_host: str = "https://graph.instagram.com"
-    api_key: str = "change-me"
-    public_base_url: str = ""
-    host: str = "0.0.0.0"
-    port: int = 8080
+    graph_api_version: str = "v21.0"
+
     database_url: str = "sqlite:///./data/app.db"
-    brands_path: Path = ROOT / "config" / "brands.yaml"
-    rules_path: Path = ROOT / "config" / "rules.yaml"
+    config_dir: Path = ROOT / "config"
+    docs_dir: Path = ROOT / "docs"
+    log_level: str = "INFO"
 
 
 @lru_cache

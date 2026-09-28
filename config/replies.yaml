@@ -1,0 +1,49 @@
+# Automatic replies.  See guides/1-replies.md for a plain-language walkthrough.
+#
+# How it works
+#   - "comments"  = public replies under a comment on your posts / reels.
+#   - "messages"  = replies in Direct, ONLY after the person messages you first.
+#   - Rules are checked top to bottom. The FIRST rule whose keyword appears in the text wins.
+#   - Keywords ignore capital letters and accents:  "Preço" matches "preco".
+#   - The reply is sent in the language the person wrote in (en, pt-PT, pt-BR, es).
+#     If a language is missing, we fall back to the brand's default_language, then to "en".
+#   - keywords: ["*"]  means "anything" -> put it LAST as a welcome / fallback (messages only).
+#   - welcome_once_per_day: the "*" rule is sent at most once per person per 24 h (avoids loops).
+
+brands:
+  marketermilano:
+    welcome_once_per_day: true
+
+    comments:
+      - name: price
+        keywords: [price, cost, how much, preço, preco, quanto custa, quanto é, valor, precio, cuánto, cuanto cuesta]
+        reply:
+          en: "Thanks for asking! Prices and details are in the link in our bio."
+          pt-PT: "Obrigado pela pergunta! Os preços e detalhes estão no link da bio."
+          pt-BR: "Obrigado por perguntar! Os preços e detalhes estão no link da bio."
+          es: "¡Gracias por preguntar! Los precios y detalles están en el link de la bio."
+
+      - name: info
+        keywords: [info, information, details, mais info, informação, informacao, detalhes, información, informacion, más info, mas info]
+        reply:
+          en: "Sure! Send us a direct message and we'll share all the details."
+          pt-PT: "Claro! Envia-nos uma mensagem direta e partilhamos todos os detalhes."
+          pt-BR: "Claro! Manda uma mensagem no direct e a gente passa todos os detalhes."
+          es: "¡Claro! Escríbenos por mensaje directo y te compartimos todos los detalles."
+
+    messages:
+      - name: price
+        keywords: [price, cost, how much, preço, preco, quanto custa, quanto é, valor, precio, cuánto, cuanto cuesta]
+        reply:
+          en: "Hi! Here is how it works: tell us what you need and we'll send you a quote within 24h."
+          pt-PT: "Olá! Funciona assim: diz-nos o que precisas e enviamos um orçamento em 24h."
+          pt-BR: "Oi! Funciona assim: conta pra gente o que você precisa e enviamos um orçamento em 24h."
+          es: "¡Hola! Funciona así: cuéntanos qué necesitas y te enviamos una cotización en 24h."
+
+      - name: welcome
+        keywords: ["*"]
+        reply:
+          en: "Thanks for your message! We've received it and will reply here shortly."
+          pt-PT: "Obrigado pela tua mensagem! Já a recebemos e respondemos aqui em breve."
+          pt-BR: "Obrigado pela sua mensagem! Já recebemos e respondemos aqui em breve."
+          es: "¡Gracias por tu mensaje! Ya lo recibimos y te respondemos aquí en breve."
