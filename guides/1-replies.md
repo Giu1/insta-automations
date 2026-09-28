@@ -27,6 +27,22 @@ File: **`config/replies.yaml`**
 - Rules are read **top to bottom, the first match wins**. Put specific rules first.
 - You may skip a language. If it is missing, the app uses the brand's `default_language`, then English.
 
+## How the language is chosen
+
+`replies.yaml` does not filter by language; it only stores the translations. The app decides in two steps:
+
+1. **Keywords are language-independent.** A rule fires if *any* of its keywords appears in the text. That is why each `keywords` list mixes English, Portuguese and Spanish words (`price, preço, precio`). You never write separate keywords per language.
+2. **The language is detected from the whole message**, then the matching `reply:` key is used:
+   - English words (*how much, please, do you…*) → `en`
+   - Spanish words (*hola, cuánto, gracias, tienen…*) → `es`
+   - Portuguese words (*olá, quanto, obrigado, não…*) → Portuguese, then: *tu / estou a / autocarro* → `pt-PT`; *você / vc / pra / a gente* → `pt-BR`
+   - Nothing recognisable, or a tie → the brand's `default_language` from `brands.yaml`
+   - If the chosen language has no text in the rule → the other Portuguese variant, then the default language, then `en`.
+
+Example: "Hola, cuánto cuesta?" → keyword `cuánto` fires the `price` rule → words *hola, cuanto* mean `es` → the `es:` text is sent.
+
+Preview any sentence with `python -m app.tools try "Oi, quanto custa pra gente?"` — it shows the rule, the language and the exact text.
+
 ## The welcome / fallback rule (messages only)
 
 ```yaml

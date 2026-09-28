@@ -5,8 +5,10 @@
 #   - "messages"  = replies in Direct, ONLY after the person messages you first.
 #   - Rules are checked top to bottom. The FIRST rule whose keyword appears in the text wins.
 #   - Keywords ignore capital letters and accents:  "Preço" matches "preco".
-#   - The reply is sent in the language the person wrote in (en, pt-PT, pt-BR, es).
-#     If a language is missing, we fall back to the brand's default_language, then to "en".
+#   - Keywords are NOT per language: mix all languages in one list (price, preço, precio).
+#   - The language is detected from the whole message, and that picks which "reply" text is sent
+#     (en, pt-PT, pt-BR, es). If unsure -> the brand's default_language. Missing text -> falls back
+#     to the other Portuguese variant, then default_language, then "en".  Details: guides/1-replies.md
 #   - keywords: ["*"]  means "anything" -> put it LAST as a welcome / fallback (messages only).
 #   - welcome_once_per_day: the "*" rule is sent at most once per person per 24 h (avoids loops).
 
