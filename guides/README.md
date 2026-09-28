@@ -10,6 +10,7 @@ Everything you change day to day lives in the `config/` folder. You edit three t
 
 Also:
 
+- [0-technical-setup.md](0-technical-setup.md) — complete install and Meta configuration checklist (technical person)
 - [4-troubleshooting.md](4-troubleshooting.md) — what to do when something does not work
 - [5-hosting.md](5-hosting.md) — running it 24/7 for free (for the person who sets it up)
 - [6-meta-app-review.md](6-meta-app-review.md) — checklist for Meta's App Review

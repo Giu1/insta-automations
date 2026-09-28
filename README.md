@@ -32,7 +32,7 @@ uvicorn app.main:app --port 8080
 
 Endpoints: `GET/POST /webhooks/meta` (Meta), `GET /health`, `GET /privacy`, `GET /data-deletion`, `POST /deauthorize`.
 
-Hosting and Meta setup: [guides/5-hosting.md](guides/5-hosting.md), [guides/6-meta-app-review.md](guides/6-meta-app-review.md).
+Full checklist (Meta app, tokens, webhooks, hosting, go-live): **[guides/0-technical-setup.md](guides/0-technical-setup.md)**. Details: [guides/5-hosting.md](guides/5-hosting.md), [guides/6-meta-app-review.md](guides/6-meta-app-review.md).
 
 ## Code map (≈600 lines)
 
